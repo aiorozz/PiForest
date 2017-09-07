@@ -1,0 +1,47 @@
+## FUNCION plotsum summarizePhases
+## Not run: 
+require(zoo) 
+data(filtered.data)
+combined.fit <- combineUncertainty(na.approx(filtered.data$max.filtered), nrep=100)
+# 100 replications for each fitting
+names(combined.fit) # a dataframe for each phenoMethod + a list with all fittings
+fit.summary <- summarizePhases(filtered.data, across.methods=TRUE)
+
+## again a list with one element for each fitting method + two additional items 
+## if across.methods is TRUE, which combines gu + klosterman phenophase methods 
+## in a single method, and the same happens for trs and derivatives
+plotSum(filtered.data, fit.summary, which='klosterman')
+## a plot with original timeseries + phenophases and their uncertainty
+
+## End plotsum summarizePhases(Not run)
+
+#####plotVI(VI.data, VI.path) plotea resumenUsing in input a VI.data object
+#as in output from extractVIs, this function returns a plot similar to the 
+#default plot of extractVIs. This function makes it easy to update VI plots after
+#using extractVIs with option begin==TRUE.
+
+plotVI(VI.data, 'I:/Resultados procesador/R phenopix/plots')
+#####fin plot VI
+
+####PHENOBP Not run: 
+data(filtered.tmp)
+breaks <- PhenoBP(filtered.tmp, confidence=0.95, breaks=4, plot=TRUE)
+mean.breaks.doy <- as.numeric(format(as.POSIXct(t(breaks[2,]), origin='2017-04-29'), '
+mean.breaks.doy
+#PLOT BP
+plotBP(zoobject, objeto de phenpbp, bp.y, ...)
+##PHENOBP End(Not run)
+
+
+###PHENODERIV:A function to extract thresholds
+
+data(bartlett2009.fitted)
+derivatives.phenophases <- PhenoDeriv(
+	x=bartlett2009.fitted$fit$predicted, fit=bartlett2009.fitted$fit
+	)
+plot(bartlett2009.fitted$fit$predicted)
+abline(v=derivatives.phenophases[c(1:2,4)], col=palette())
+mtext(names(derivatives.phenophases[c(1:2,4)]), 
+	at=derivatives.phenophases[c(1:2,4)], 
+	line=-2, 
+	col=palette()[1:3])
