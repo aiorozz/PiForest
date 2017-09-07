@@ -397,4 +397,4 @@ cluster.data3 <- greenClusters(global.phenophases[,1:2], nclusters=3)
               axis.args=list(col.axis='blue'),
               legend.args=list(text='Downturn date (doy)', col='blue'),
               probs=c(0.05, 0.99))
-  
+  #END
