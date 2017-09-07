@@ -1,0 +1,400 @@
+setwd("I:/Resultados procesador/R phenopix/SPATIAL")
+
+#IMPORTANTE: FOR 1:10 NO TENER NINGUN ARCHIVO DIFERENTE A LAS CARPETAS !! NO CORRE!!
+#load("I:/Resultados procesador/R phenopix/ROI/roi.data.Rdata")
+
+load('I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata', verbose=TRUE)
+# REVISAR ESTA PARTE PARA CADA ROI
+
+roi1.roi <- roi.data['roi1']
+str(roi1.roi)
+
+roi2.roi <- roi.data['roi2']
+str(roi1.roi)
+
+roi3.roi <- roi.data['roi3']
+str(roi1.roi)
+
+table(roi1.roi$roi1$pixels.in.roi$pip)
+
+table(roi2.roi$roi2$pixels.in.roi$pip)
+
+table(roi3.roi$roi3$pixels.in.roi$pip)#ERROR NO LO ENCUENTRA OK!!
+#ROIS!!!
+
+args(splitROI)
+# ERROR IMPORTANTE Error in the.seq[a]:(the.seq[a + 1]) : NA/NaN argument
+splitted.roi <- splitROI(roi1.roi, nsplit=10, names = NULL) ##NO LO CORTA poq?
+splitted.roi <- splitROI (roi2.roi, nsplit=10, names=NULL)
+splitted.roi <- splitROI (roi3.roi, nsplit=10, names=NULL)
+
+names(splitted.roi)
+
+sapply(splitted.roi, function(x) length(which(x$pixels.in.roi$pip==1)))
+
+structureFolder('I:/Resultados procesador/R phenopix/SPATIAL')
+
+for (a in 1:length(splitted.roi)) {
+  roi.data <- splitted.roi[a]
+  final.name <- paste0('I:/Resultados procesador/R phenopix/SPATIAL/ROI/ROI',a,'/roi.data.Rdata')
+  dir.create(paste0('I:/Resultados procesador/R phenopix/SPATIAL/ROI/ROI',a,'/'))
+  dir.create(paste0('I:/Resultados procesador/R phenopix/SPATIAL/VI/VI',a,'/'))
+  save(roi.data, file=final.name)
+}
+#correr en R normal libreria no compatible con RStudio OK MOVER ROI ORIGINAL A CARPETA ANTERIOR
+img.path <- 'I:/Resultados procesador/Prueba aleatoria R'
+ roi.paths <- list.files('I:/Resultados procesador/R phenopix/SPATIAL/ROI/', full.names=TRUE)
+ vi.paths <- list.files('I:/Resultados procesador/R phenopix/SPATIAL/VI/', full.names=TRUE)
+ #CORRER SEPARADO
+ for (a in 1:10) {
+   act.roi.path <- paste0(roi.paths[a], '/')
+   act.vi.path <- paste0(vi.paths[a], '/')
+   extractVIs(img.path,act.roi.path,#REVISAR!!!!!!!ERROR?
+                vi.path=act.vi.path,
+                begin=NULL, spatial=TRUE,
+                date.code='yyyy_mm_dd_HHMMSS')
+ }
+ 
+ load("I:/Resultados procesador/R phenopix/SPATIAL/VI/VI1/VI.data.spatial.Rdata")
+
+ class(VI.data[[1]])
+ 
+ head(names(VI.data[[1]]))
+ 
+ str(VI.data[[1]][[1]])
+ 
+ ## analisis espacial  OK
+# args(spatialFilter)
+ #function (spatial.list, filter = c("night", "spline", "max"),
+  #         filter.options = NULL, ncores = "all", log.file = NULL)
+  # NULL
+ 
+ #extractVIs ("I:/Resultados procesador/Prueba aleatoria R", "I:/Resultados procesador/R phenopix/ROI/", "I:/Resultados procesador/R phenopix/VI", roi.name = NULL,
+  #           plot = TRUE, begin = NULL, spatial = FALSE, "yyyy_mm_dd_HHMMSS", npixels = 1,
+   #          file.type = ".jpg", bind = FALSE)
+ 
+ #8 Filter the data with function spatialFilter PROCSO LENTO PARA CADA SUBCArpetas
+ for (a in 1:10) {
+   act.vi.path <- vi.paths[a]
+   load(paste0(act.vi.path, '/VI.data.spatial.Rdata'))
+   filtered.tmp <- spatialFilter(VI.data, log.file='I:/Resultados procesador/R phenopix/SPATIAL/VI/')
+   save.name <- paste0(act.vi.path,'/filtered.tmp.Rdata')
+   save(filtered.tmp, file=save.name)
+ }
+ 
+ 
+ all.lines <- readLines('log.txt')
+ cat(paste(length(all.lines)-1, 'pixels done\n'))
+ cat(paste(all.lines[length(all.lines)], '\n'))
+ 
+ load(paste0(vi.paths[1],'/filtered.tmp.Rdata'), verbose=TRUE)
+ 
+ summary(filtered.tmp[,1])
+ 
+ #PLOT1 The seasonal trajectory of gcc of 500 random pixels from subROI 1
+ sampling.vect <- sample(dim(filtered.tmp)[2], 500)
+ library(zoo)
+ plot(filtered.tmp[,sampling.vect], plot.type='single', col='grey',
+      ylab='subROI 1: gcc trajectories of 500 random pixels + roi average')
+ avg.trajectory <- apply(filtered.tmp,1,mean, na.rm=TRUE)
+ avg.trajectory <- zoo(avg.trajectory, order.by=index(filtered.tmp))
+ lines(avg.trajectory, lwd=3)
+ 
+ ##first we create appropriate folders to store the fitted data
+ for (a in 1:10) dir.create(paste0('I:/Resultados procesador/R phenopix/SPATIAL/FITTED/fitted',a), recursive=TRUE)
+ ## list and grep all filtered files
+ filtered.files <- list.files(vi.paths, full.names=TRUE, recursive=TRUE)
+ filtered.files <- filtered.files[grep('filtered.tmp', filtered.files)]
+ fitted.paths <- list.files('I:/Resultados procesador/R phenopix/SPATIAL/FITTED/', full.names=TRUE)
+ for (a in 1:10) {
+   act.file.to.process <- filtered.files[a]
+   act.fitted.path <- fitted.paths[a]
+   load(act.file.to.process, verbose=TRUE)
+   fitted.tmp <- spatialGreen(filtered.tmp, fit='spline',
+                              threshold='klosterman',
+                              log.file='I:/Resultados procesador/R phenopix/SPATIAL')
+   save.name <- paste0(act.fitted.path,'/fitted.tmp.RData')
+   save(fitted.tmp, file=save.name)
+ }
+ 
+ load('I:/Resultados procesador/R phenopix/SPATIAL/FITTED/fitted1/fitted.tmp.RData', verbose=TRUE)
+ ## extraction of a matrix (because of sapply)
+ fitted.values <- sapply(fitted.tmp, extract, what='fitted')
+ ## convert to a zoo object
+ fitted.values2 <- zoo(fitted.values,
+  order.by=index(extract(fitted.tmp[[1]], what='fitted')))
+   sampling.vect <- sample(dim(filtered.tmp)[2], 500)
+     plot(fitted.values2[,sampling.vect], plot.type='single', col='grey',
+       ylab='subROI 1: gcc spline fitting of 500 random pixels')
+                                              
+ 
+ 
+ ##Extracting phenophases with extractParameters()
+     spatial.phenophases.klosterman <- extractParameters(fitted.tmp)
+     summary(spatial.phenophases.klosterman)
+     
+     spatial.phenophases.trs <- extractParameters(fitted.tmp, update='trs') #conteo de numerospixeles ?
+     spatial.phenophases.trs2 <- extractParameters(fitted.tmp, update='trs', trs=0.25)
+     # And their comparison: # no ghrafica pq no hay datos en SOS
+     plot(spatial.phenophases.trs$sos,
+          spatial.phenophases.trs2$sos,
+          pch=20, xlim=c(150, 210),
+          ylim=c(140, 200),
+          xlab='start of season as doy when 50% GCC is reached',
+          ylab='start of season as doy when 25% GCC is reached')
+     
+#Rendering pixel by pixel phenophases in a phenophase map with plotSpatial
+
+     dir.create('I:/Resultados procesador/R phenopix/SPATIAL/PHENOPHASES/')
+     global.phenophases.list <- list()
+     
+     #correr aparte
+     for (a in 1:10) {
+       act.fitted.path <- fitted.paths[a]
+       act.number.big <- substr(act.fitted.path,
+                                nchar(act.fitted.path)-10,
+                                nchar(act.fitted.path)) ## this line requires that you dont have numbers in last ten characters of your folder path
+       track.number <- as.numeric(gsub("[^0-9]", "", act.number.big), "")
+       to.load <- list.files(act.fitted.path, full.names=TRUE)
+       load(to.load, verbose=TRUE)
+       spatial.phenophases.klosterman.tmp <- extractParameters(fitted.tmp)
+       global.phenophases.list[[track.number]] <- spatial.phenophases.klosterman.tmp
+     }
+     #
+     global.phenophases <- NULL
+     for (a in 1:10) {
+       tmp.data.frame <- global.phenophases.list[[a]]
+       global.phenophases <- rbind(global.phenophases, tmp.data.frame)
+     }
+     
+     #####################################
+     dir.create('I:/Resultados procesador/R phenopix/SPATIAL/PHENOPHASES/')
+     global.phenophases.klosterman.list <- list()
+     for (a in 1:10) {
+       act.fitted.path <- fitted.paths[a]
+       act.number.big <- substr(act.fitted.path,
+                                nchar(act.fitted.path)-10,
+                                nchar(act.fitted.path)) ## this line requires
+       ## that you dont have numbers
+       ## in last ten characters of your folder path
+       track.number <- as.numeric(gsub("[^0-9]", "", act.number.big), "")
+       to.load <- list.files(act.fitted.path, full.names=TRUE)
+       load(to.load, verbose=TRUE)
+       spatial.phenophases.klosterman.tmp <- extractParameters(fitted.tmp, update= 'klosterman')
+       global.phenophases.klosterman.list[[track.number]] <- spatial.phenophases.klosterman.tmp
+     }
+     
+     global.phenophases.klosterman <- NULL
+      for (a in 1:10) {
+        klostermantmp.data.frame <- global.phenophases.klosterman.list[[a]]
+        global.phenophases.klosterman <- rbind(global.phenophases.klosterman, klostermantmp.data.frame)
+        
+        }
+
+################################FIN#################################     
+     #Fases fenologicas!!!!!!
+     names(global.phenophases)
+     
+     names(global.phenophases.klosterman)
+     
+     #plot NDVI????PhenoMap of Greenup phenophase
+     
+     colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+     plotSpatial(global.phenophases, param='Greenup',
+                 roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+                 col=colors(100),
+                 axis.args=list(col.axis='white'),
+                 legend.args=list(text='Greenup (doy)', col='white'))
+     
+     
+     ##2doplot crecimiento y muerte 
+     #PhenoMap of phenophases extracted with Klosterman method
+     
+     colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+     par(mfrow=c(2,2))
+     plotSpatial(global.phenophases, param='Greenup', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=colors(100),
+                 axis.args=list(col.axis='white', cex=.8),
+                 legend.args=list(text='Greenup', col='white'), legend.mar=7)
+     plotSpatial(global.phenophases, param='Maturity', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=colors(100),
+                 axis.args=list(col.axis='white', cex=.8),
+                 legend.args=list(text='Maturity', col='white'), legend.mar=7)
+     plotSpatial(global.phenophases, param='Senescence', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=colors(100),
+                 axis.args=list(col.axis='white', cex=.8),
+                 legend.args=list(text='Senescence', col='white'), legend.mar=7)
+     plotSpatial(global.phenophases, param='Dormancy', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=colors(100),
+                 axis.args=list(col.axis='white', cex=.8),
+                 legend.args=list(text='Dormancy', col='white'), legend.mar=7)
+     
+##OTRO PhenoMap of growing season length (days)
+     
+     colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+     global.phenophases$gsl <- global.phenophases$Dormancy - global.phenophases$Greenup
+     plotSpatial(global.phenophases, param='gsl',
+                 roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+                 col=colors(100),
+                 axis.args=list(col.axis='white'),
+                 legend.args=list(text='Growing season length \n(days)', col='white'))
+
+#diferencias entre spline vs klosterman
+     #Comparison between two different methods (spline vs Klosterman)     for phenophase extraction
+     
+     colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+     greenup.consistency <- data.frame( # no lo construye pq o hay global phenophases klosterman!!!!
+       difference=global.phenophases$Greenup-global.phenophases.klosterman$Greenup
+     )
+     plotSpatial(greenup.consistency, param='difference',
+                 roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+                 image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+                 col=colors(100),
+                 axis.args=list(col.axis='white'),
+                 legend.args=list(text='Difference (days)', col='white'))
+#Resumen 
+summary(greenup.consistency)
+
+#PhenoMap of Maturity phenophase after Klosterman curve fitting GLOBAL>KLOSTERMAN NO ENCONTRADO NO GENERADO
+colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+na.pc <- length(
+  which(
+    is.na(
+      global.phenophases.klosterman$Maturity)))/length(
+        global.phenophases.klosterman$Maturity)*100
+
+round(na.pc)
+
+
+plotSpatial(global.phenophases.klosterman, param='Maturity', #TAMPOCO ESTA KLOSTERMAN GLOBAL
+            roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+            image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+            col=colors(100),
+            axis.args=list(col.axis='white'),
+            legend.args=list(text='Greenup (doy)', col='white'))
+
+#12 Pushing forward the analysis: cluster analysis
+#PLOT An example of cluster analysis
+cluster.data <- greenClusters(global.phenophases[,1:2], nclusters=4)
+str(cluster.data)
+
+colors <- palette()[1:4]
+plotSpatial(cluster.data$clusters, param='clusters',
+            roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+            image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+            col=colors,
+            axis.args=list(col.axis='white'),
+            legend.args=list(text='Clusters', col='white'))
+round(table(cluster.data$clusters)/length(cluster.data$clusters$clusters)*100)
+
+cluster.data3 <- greenClusters(global.phenophases[,1:2], nclusters=3)
+ round(table(cluster.data3$clusters)/length(cluster.data$clusters$clusters)*100)
+ 
+ cluster.data2 <- greenClusters(global.phenophases[,1:2], nclusters=2)
+ round(table(cluster.data2$clusters)/length(cluster.data$clusters$clusters)*100)
+ 
+ cluster.data5 <- greenClusters(global.phenophases[,1:2], nclusters=5)
+  round(table(cluster.data5$clusters)/length(cluster.data$clusters$clusters)*100)
+  
+  ##PLOT Cluster analysis with different number of clusters
+  
+  colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+  par(mfrow=c(2,2))
+  plotSpatial(cluster.data5$clusters, param='clusters', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+              'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=palette()[1:5],
+              axis.args=list(col.axis='white', cex=.8),
+              legend.args=list(text='5 clusters', col='white'), legend.mar=7)
+  plotSpatial(cluster.data$clusters, param='clusters', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+              'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=palette()[1:4],
+              axis.args=list(col.axis='white', cex=.8),
+              legend.args=list(text='4 clusters', col='white'), legend.mar=7)
+  plotSpatial(cluster.data3$clusters, param='clusters', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+              'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=palette()[1:3],
+              axis.args=list(col.axis='white', cex=.8),
+              legend.args=list(text='3 clusters', col='white'), legend.mar=7)
+  plotSpatial(cluster.data2$clusters, param='clusters', 'I:/Resultados procesador/R phenopix/SPATIAL/roi.data.Rdata',
+              'I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', col=palette()[1:2],
+              axis.args=list(col.axis='white', cex=.8),
+              legend.args=list(text='2 clusters', col='white'), legend.mar=7)
+  
+### bartlett2009
+
+  data(bartlett2009.processed)
+  klosterman.formula <- bartlett2009.processed$fit$fit$formula
+  cluster.data.params <- greenClusters(global.phenophases[,1:2],
+                                       data.curve=global.phenophases.klosterman[,5:17],# NO ESTA!!
+                                       nclusters=3, formula=klosterman.formula,
+                                       plot=FALSE)
+  str(cluster.data.params)
+  
+  #PLOT curvas Average curves for each of the 3 clusters analysed
+  colors <- palette()[1:3]
+  plot(cluster.data.params$curves, plot.type='single', col=colors)
+  
+  
+  filtered.list <- list()
+  for (a in 1:length(filtered.files)) {
+    act.filtered.path <- vi.paths[a]
+    act.number.big <- substr(act.filtered.path,
+                             nchar(act.filtered.path)-10,
+                             nchar(act.filtered.path)) ## this line requires that you dont have number in last ten characters of your folder path
+    track.number <- as.numeric(gsub("[^0-9]", "", act.number.big), "")
+    load(paste0(act.filtered.path, '/filtered.tmp.Rdata'), verbose=TRUE)
+    filtered.list[[track.number]] <- filtered.tmp
+  }
+  library(zoo)
+  global.filtered.data <- zoo(order.by=index(filtered.list[[1]]))
+  for (a in 1:10) {
+    tmp.df <- filtered.list[[a]]
+    global.filtered.data <- cbind(global.filtered.data, tmp.df)
+    print(a)
+  }
+  
+  dim(global.filtered.data)
+  
+  ##
+  cl1.pos <- which(cluster.data.params$clusters$clusters==1)
+  cl2.pos <- which(cluster.data.params$clusters$clusters==2)
+  cl3.pos <- which(cluster.data.params$clusters$clusters==3)
+  avg.cl1 <- apply(global.filtered.data[,cl1.pos], 1, 'mean')
+  avg.cl2 <- apply(global.filtered.data[,cl2.pos], 1, 'mean')
+  avg.cl3 <- apply(global.filtered.data[,cl3.pos], 1, 'mean')
+  avg.clusters <- zoo(cbind(avg.cl1, avg.cl2, avg.cl3),
+                      order.by=index(global.filtered.data))
+  
+  #plot TRUE Average curves for each of the 3 clusters analysed
+  colors <- palette()[1:3]
+  plot(avg.clusters, plot.type='single', col=colors)
+  legend('topright', col=colors, legend=paste('cluster', 1:3), lty=1, bty='n')
+  
+  
+  ##Fitted curves and extracted thresholds in the three ROIs defined  with the cluster analysis, from top to bottom, cluster 1, 2 and 3
+  fit1 <- greenProcess(avg.clusters[,1], 'spline', 'gu', plot=FALSE)
+  fit2 <- greenProcess(avg.clusters[,2], 'spline', 'gu', plot=FALSE)
+  fit3 <- greenProcess(avg.clusters[,3], 'spline', 'gu', plot=FALSE)
+  par(mfrow=c(3,1), oma=c(5,4,4,2), mar=rep(.5,4))
+  plot(fitted(fit1))
+  abline(v=extract(fit1, 'metrics')[1:4])
+  plot(fitted(fit2))
+  abline(v=extract(fit2, 'metrics')[1:4])
+  plot(fitted(fit3))
+  abline(v=extract(fit3, 'metrics')[1:4])
+  
+  #ROIs extracted PLOT
+  PrintROI('I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg', 'files/data2load/')
+  
+  all.spatial <- list(early=early.spatial, late=late.spatial,
+                       medium=medium.spatial)
+  
+  ##PhenoMap of Downturn date (beginning of senescence)
+  colors <- colorRampPalette(c('blue', 'red', 'yellow'), space='rgb')
+  plotSpatial(all.spatial, param='DD',
+              roi.data.path='I:/Resultados procesador/R phenopix/SPATIAL/data2load/roi.data.Rdata',
+              image.path='I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg',
+              col=colors(100),
+              axis.args=list(col.axis='blue'),
+              legend.args=list(text='Downturn date (doy)', col='blue'),
+              probs=c(0.05, 0.99))
+  
