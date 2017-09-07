@@ -1,0 +1,370 @@
+#_____________________________________Instalacion__________________
+#install.packages("PAQUETE", dep=T) # Para la triangulación de Delaunay y teselación de Dirichlet junto con todas las dependencias
+#Imports: zoo, plyr, SDMTools, jpeg, stringr (>= 1.0.0), bcp, strucchange, parallel, foreach, doParallel, iterators, gtools, raster, sp
+#install.packages("plyr", dep=T)
+#install.packages("SDMtools", dep=T)
+#install.packages("jpeg", dep=T)
+#install.packages("stringr", dep=T)
+#install.packages("bcp", dep=T)
+#install.packages("strucchange", dep=T)
+#install.packages("paralell", dep=T)
+#install.packages("foreach", dep=T)
+#install.packages("doParalell", dep=T)
+#install.packages("iterators", dep=T)
+#install.packages("gtools", dep=T)
+#install.packages("raster", dep=T)
+#install.packages("sp", dep=T)
+#install.packages("zoo", dep=T)
+#________________________________________RUN________________________
+# MANUAL https://rdrr.io/rforge/phenopix/man
+#PALETA DE COLORES http://www.rapidtables.com/web/color/RGB_Color.htm
+#recursos  http://www.jpereira.net/
+#Comando para correr
+# EPORTAR A EXCEL XLS VI
+WriteXLS(VI.data, ExcelFileName = "VI.dataprueba.xls", SheetNames = NULL, perl = 'perl',
+           verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
+         row.names = FALSE, col.names = TRUE,
+         AdjWidth = FALSE, AutoFilter = FALSE, BoldHeaderRow = FALSE,
+         na = "",
+         FreezeRow = 0, FreezeCol = 0,
+         envir = parent.frame())
+## EXPORTAR A EXCEL XLS ROIS
+WriteXLS(roi.data, ExcelFileName = "ROI.dataprueba.xls", SheetNames = NULL, perl = 'perl',
+         verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
+         row.names = FALSE, col.names = TRUE,
+         AdjWidth = FALSE, AutoFilter = FALSE, BoldHeaderRow = FALSE,
+         na = "",
+         FreezeRow = 0, FreezeCol = 0,
+         envir = parent.frame())
+## EXPORTAR A EXCEL XLS dataframed
+WriteXLS(dataframed, ExcelFileName = "dataframedprueba.xls", SheetNames = NULL, perl = 'perl',
+         verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
+         row.names = FALSE, col.names = TRUE,
+         AdjWidth = FALSE, AutoFilter = FALSE, BoldHeaderRow = FALSE,
+         na = "",
+         FreezeRow = 0, FreezeCol = 0,
+         envir = parent.frame())
+## EXPORTAR A EXCEL XLS dataframed
+WriteXLS(explored, ExcelFileName = "exploredprueba.xls", SheetNames = NULL, perl = 'perl',
+         verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
+         row.names = FALSE, col.names = TRUE,
+         AdjWidth = FALSE, AutoFilter = FALSE, BoldHeaderRow = FALSE,
+         na = "",
+         FreezeRow = 0, FreezeCol = 0,
+         envir = parent.frame())
+#INICIO
+#listar directorios
+library(phenopix)
+my.path <- structureFolder(path = getwd(), showWarnings = FALSE)
+str(my.path)
+#graficar imagen
+.plotImage <- function(image, ...) {
+  ncols <- ncol(image)
+  nrows <- nrow(image)
+  suppressWarnings(plot(0,
+                        type='n', xlim=c(0, ncols),
+                        ylim=c(0, nrows), xlab = 'Anchura px', ylab = 'Altura px', ...))
+  suppressWarnings(rasterImage(image,
+                               xleft=0, ybottom=0, xright=ncols,
+                               ytop=nrows, ...))
+}
+
+img <- jpeg::readJPEG('I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg')
+.plotImage(img)
+
+#GIANLUCA FILIPPA FIX dibujar ROI
+
+DrawROI("I:/Resultados procesador/R phenopix/REF/Referencia RGB.jpg", "I:/Tesis UMNG/Analisis R/ROI/", nroi = 4, roi.names = NULL, 
+        file.type = ".jpg")
+
+#Cargar ROIS
+load("I:/Resultados procesador/R phenopix/ROI/roi.data.Rdata")
+#listar ROIS
+str(roi.data)
+
+#plotear ROIS
+
+PrintROI(path_img_ref = "I:/Resultados procesador/R phenopix/REF/Referencia RGBROI.jpg",
+         path_ROIs = "I:/Resultados procesador/R phenopix/ROI/",
+         which = 'all',
+         col = palette())
+
+# REVISAR!!!  ROI locacion y nombre Error in new.img[, , 1] : número incorreto de dimensiones
+
+#updateROI ("I:/Tesis UMNG/Analisis R/ROI/roi.data.rdata", "I:/Tesis UMNG/Analisis R/REF/Referencia RGB320.jpg") 
+
+#Analisis espacial REvisar args yy.mm_dd.HHMM CORRER EL DE ABAJO!! POSICX ERROR RUTA!!! corregida
+#extractVIs ("I:/Tesis UMNG/Fotos Soporte/Panel/RGB", "I:/Tesis UMNG/Analisis R/ROI/", "F:/Tesis UMNG/Analisis R/VI/", roi.name = NULL,
+#plot = TRUE, begin = NULL, spatial = FALSE, "yyyy_mm_dd_HHMM", npixels = 1,
+#file.type = ".jpg", bind = FALSE)
+
+
+#Analisis espacial revisar la RUTA pocas imagenes oK vivi.data en raiz
+extractVIs ("I:/Resultados procesador/Prueba aleatoria R", "I:/Resultados procesador/R phenopix/ROI/", "I:/Resultados procesador/R phenopix/VI", roi.name = NULL,
+            plot = TRUE, begin = NULL, spatial = FALSE, "yyyy_mm_dd_HHMMSS", npixels = 1,
+            file.type = ".jpg", bind = FALSE)
+
+load("I:/Resultados procesador/R phenopix/VI/VI.data.Rdata")
+
+summary(VI.data) ## a list with two data.frames, one for each ROI
+
+names(VI.data[[1]]) ## check which vegetation indexes are extracted
+
+
+#mirar datos de Vi.data
+str(VI.data)
+#plot grafico REVISAR eje x y puntos
+#REFERENCIA
+#names(VI.data[[1]])
+#[1] "date"   "doy"    "r.av"   "g.av"   "b.av"   "r.sd"   "g.sd"   "b.sd"   "bri.av" "bri.sd" "gi.av"  "gi.sd"  "gei.av" "gei.sd" "ri.av"  "ri.sd"  "bi.av" 
+#[18] "bi.sd" 
+
+
+#plot1 funcionando date es la hora? mes!Figure 3: Seasonal course of raw digital numbers, Torgnon, year 2012
+with(VI.data$roi1, plot(date, r.av, pch=20, col='red', main= 'DN ROI 1',
+                        ylim=c(0,255), xlab= 'Fecha', ylab='DN [0,255]'))
+with(VI.data$roi1, points(date, g.av, col='green', pch=20))
+with(VI.data$roi1, points(date, b.av, col='blue', pch=20))
+#ROI2
+with(VI.data$roi2, plot(date, r.av, pch=20, col='red', main= 'DN ROI 2',
+                        ylim=c(0,255), xlab= 'Fecha', ylab='DN [0,255]'))
+with(VI.data$roi2, points(date, g.av, col='green', pch=20))
+with(VI.data$roi2, points(date, b.av, col='blue', pch=20))
+#ROI3
+with(VI.data$roi3, plot(date, r.av, pch=20, col='red', main= 'DN ROI 3',
+                        ylim=c(0,255), xlab= 'Fecha', ylab='DN [0,255]'))
+with(VI.data$roi3, points(date, g.av, col='green', pch=20))
+with(VI.data$roi3, points(date, b.av, col='blue', pch=20))
+
+#ROI4
+with(VI.data$roi4, plot(date, r.av, pch=20, col='red', main= 'DN ROI 4',
+                        ylim=c(0,255), xlab= 'Fecha', ylab='DN [0,255]'))
+with(VI.data$roi3, points(date, g.av, col='green', pch=20))
+with(VI.data$roi3, points(date, b.av, col='blue', pch=20))
+
+
+#Indices Relativos plot 2 funcionando date es la hora? mes!
+with(VI.data$roi1, plot(date, ri.av, pch=20, col='red', main= 'Indices Relativos ROI 1',
+                        ylim=c(0.1,0.6), xlab='Fecha', ylab='Indices Relativos'))
+with(VI.data$roi1, points(date, gi.av, col='green', pch=20))
+with(VI.data$roi1, points(date, bi.av, col='blue', pch=20))
+
+#ROI2
+with(VI.data$roi2, plot(date, ri.av, pch=20, col='red', main= 'Indices Relativos ROI 2',
+                        ylim=c(0.1,0.6), xlab='Fecha', ylab='Indices Relativos'))
+with(VI.data$roi2, points(date, gi.av, col='green', pch=20))
+with(VI.data$roi2, points(date, bi.av, col='blue', pch=20))
+
+#ROI3
+with(VI.data$roi3, plot(date, ri.av, pch=20, col='red', main= 'Indices Relativos ROI 3',
+                        ylim=c(0.1,0.6), xlab='Fecha', ylab='Indices Relativos'))
+with(VI.data$roi3, points(date, gi.av, col='green', pch=20))
+with(VI.data$roi3, points(date, bi.av, col='blue', pch=20))
+
+#ROI4
+with(VI.data$roi4, plot(date, ri.av, pch=20, col='red', main= 'Indices Relativos ROI 4',
+                        ylim=c(0.1,0.6), xlab='Fecha', ylab='Indices Relativos'))
+with(VI.data$roi3, points(date, gi.av, col='green', pch=20))
+with(VI.data$roi3, points(date, bi.av, col='blue', pch=20))
+
+#Cordenadas cromaticas  FILTROS funcionando sin max 
+str (filtered.data)
+#OK
+filtered.data <- autoFilter(VI.data$roi1)
+str(filtered.data)
+names(filtered.data)
+
+dataframed <- convert(filtered.data, year='2017')
+str(dataframed)
+
+my.options <- get.options()
+names(my.options)
+#names(filtered.data)
+#ROI2
+filtered.data <- autoFilter(VI.data$roi2)
+str(filtered.data)
+names(filtered.data)
+
+dataframed <- convert(filtered.data, year='2017')
+str(dataframed)
+
+my.options <- get.options()
+names(my.options)
+
+#ROI3
+filtered.data <- autoFilter(VI.data$roi3)
+str(filtered.data)
+names(filtered.data)
+
+dataframed <- convert(filtered.data, year='2017')
+str(dataframed)
+
+my.options <- get.options()
+names(my.options)
+
+#ROI4
+filtered.data <- autoFilter(VI.data$roi4)
+str(filtered.data)
+names(filtered.data)
+
+dataframed <- convert(filtered.data, year='2017')
+str(dataframed)
+
+my.options <- get.options()
+names(my.options)
+
+#OK
+## see help file for th meaning
+my.options$max.filter$qt <- 0.95 ## use 95th percentile instead
+## of 90th for max.filter
+filtered.data2 <- autoFilter(VI.data$roi1, filter.options=my.options, plot=FALSE)
+plot(filtered.data$max.filtered, main = 'ROI 1', ylab='Filtro Max', xlab = 'Fecha') ## default options
+lines(filtered.data2$max.filtered, col='red') ## customized options
+legend('topleft', col=palette()[1:2], lty=1, legend=c('90th', '95th'), bty='n')
+
+
+#ROI2
+## see help file for th meaning
+my.options$max.filter$qt <- 0.95 ## use 95th percentile instead
+## of 90th for max.filter
+filtered.data2 <- autoFilter(VI.data$roi2, filter.options=my.options, plot=FALSE)
+plot(filtered.data$max.filtered, main = 'ROI 2', ylab='Filtro Max', xlab = 'Fecha') ## default options
+lines(filtered.data2$max.filtered, col='red') ## customized options
+legend('topleft', col=palette()[1:2], lty=1, legend=c('90th', '95th'), bty='n')
+
+#ROI3
+## see help file for th meaning
+my.options$max.filter$qt <- 0.95 ## use 95th percentile instead
+## of 90th for max.filter
+filtered.data2 <- autoFilter(VI.data$roi3, filter.options=my.options, plot=FALSE)
+plot(filtered.data$max.filtered, main = 'ROI 3', ylab='Filtro Max', xlab = 'Fecha') ## default options
+lines(filtered.data2$max.filtered, col='red') ## customized options
+legend('topleft', col=palette()[1:2], lty=1, legend=c('90th', '95th'), bty='n')
+
+#ROI4
+## see help file for th meaning
+my.options$max.filter$qt <- 0.95 ## use 95th percentile instead
+## of 90th for max.filter
+filtered.data2 <- autoFilter(VI.data$roi4, filter.options=my.options, plot=FALSE)
+plot(filtered.data$max.filtered, main = 'ROI 4', ylab='Filtro Max', xlab = 'Fecha') ## default options
+lines(filtered.data2$max.filtered, col='red') ## customized options
+legend('topleft', col=palette()[1:2], lty=1, legend=c('90th', '95th'), bty='n')
+
+
+#OK
+
+## spline curve + trs phenophases
+fit1 <- greenProcess(filtered.data$max.filtered,
+                     'spline',
+                     'trs',
+                     plot=FALSE
+)
+summary(fit1)
+## check the plot
+plot(fit1, type='p', pch=20, col='grey')
+## Beck fitting + derivatives
+fit2 <- greenProcess(filtered.data$max.filtered,
+                     'beck',
+                     'derivatives',
+                     plot=FALSE)
+summary(fit2)
+plot(fit2, type='p', pch=20, col='grey')
+## klosterman fitting + klosterman phenophases
+fit3 <- greenProcess(filtered.data$max.filtered,
+                     'klosterman',
+                     'klosterman',
+                     plot=FALSE)
+summary(fit3)
+plot(fit3, type='p', pch=20, col='grey')
+## gu fitting and phenophases
+fit4 <- greenProcess(filtered.data$max.filtered,
+                     'gu',
+                     'gu',
+                     plot=FALSE)
+summary(fit4)
+plot(fit4, type='p', pch=20, col='grey')
+## show all together
+library(zoo)
+t <- as.numeric(format(index(filtered.data$max.filtered), '%j'))
+par(lwd=3)
+plot(t, dataframed$max.filtered, type='p', pch=20,
+     ylab='Green chromatic coordinate', xlab='DOYs')
+lines(fitted(fit1), col='blue')
+lines(fitted(fit2), col='red')
+lines(fitted(fit3), col='green')
+lines(fitted(fit4), col='violet')
+legend('topleft', col=c('blue', 'red', 'green', 'violet'),
+       lty=1, legend=c('Spline', 'Beck', 'Klosterman', 'Gu'),
+       bty='n')
+#OK
+#GU PHENOPHASES FIX
+plot(fit4, pch=20, col='grey', type='p',
+     xlab='DOYs', ylab='Green chromatic coordinates')
+print(fit4)
+#OK
+
+#hidrological DOY Figure 9: Three phenophase methods applied to the Gu tting
+fit4.trs <- update(fit4, 'trs', plot=FALSE)
+fit4.klosterman <- update(fit4, 'klosterman', plot=FALSE)
+fit4.gu <- update(fit4, 'gu', plot=FALSE)
+par(mfrow=c(2,2), oma=rep(5,4,4,2), mar=rep(0,4))
+plot(fit4.trs, type='n', main='', xaxt='n')
+mtext('trs', 3, adj=0.1, line=-2)
+plot(fit4.klosterman, type='n', main='', xaxt='n', yaxt='n')
+mtext('klosterman', 3, adj=0.1, line=-2)
+plot(0, type='n', axes=FALSE, xlab='', ylab='')
+plot(fit4.gu, type='n', main='', yaxt='n')
+axis(4)
+mtext('gu', 3, adj=0.1, line=-2)
+
+#OK Overview of all combinations of curves and ts as obtained by the plotExplore function
+explored <- greenExplore(filtered.data$max.filtered)
+plotExplore(explored)
+
+#OK
+
+fit.elmore <- greenProcess(filtered.data$max.filtered,
+                           'elmore', 'trs', plot=FALSE)
+extract(fit.elmore, 'metrics')
+
+fit.elmore.2 <- ElmoreFit(filtered.data$max.filtered)
+PhenoExtract(fit.elmore.2, 'trs', plot=FALSE)
+try(PhenoExtract(fit.elmore, plot=FALSE)) ## will fail
+#OKthe uncertainity estimation
+
+
+#NO FUNCIONA del todo?
+fit.complete <- greenProcess(ts = filtered.data$max.filtered,
+                             fit = 'gu',
+                             threshold= 'gu',
+                             plot = FALSE,
+                             uncert = TRUE,
+                             nrep = 100)
+
+#OK
+print(fit.complete)
+#OK
+
+print(update(fit.complete, 'gu', envelope='min-max', plot = FALSE))
+
+#hidrological DOY
+extract(fit.complete, 'metrics.uncert') ## get threshold uncertainty data`
+extract(fit.complete, 'params.uncert') ## get parameters of each fitting curve` #NO FUNCIONA????
+
+#Figure 11: The Uncertainty Estimation (100 rep) on Klosterman t and Gu phenophases barras de error
+plot(fit.complete, type='p', pch=20)
+
+#OK?
+update(fit.complete, 'klosterman', plot=FALSE)
+#Hidrological DOY
+extract(update(fit.complete, 'trs', plot=FALSE), 'metrics')## default to 50% of increasing
+
+extract(update(fit.complete, 'trs', trs=0.2, plot=FALSE), 'metrics')## changed to 20%
+#ERROR breaks ROI tamaño?
+print(PhenoBP(x = filtered.data$max.filtered,
+              breaks = 3, plot = FALSE,
+              confidence= 0.99))
+#
+
+
+#END VIGNETTE BASE
